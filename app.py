@@ -72,3 +72,10 @@ if __name__ == '__main__':
 
   for product in session.query(Product):
     print(product)
+
+  # print(clean_date('10/31/2012'))
+  # print(clean_price('$15.99'))
+  # print(clean_quantity('99'))
+  # print(type(clean_date('10/31/2012')))
+  # print(type(clean_price('$15.99')))
+  # print(type(clean_quantity('99')))
