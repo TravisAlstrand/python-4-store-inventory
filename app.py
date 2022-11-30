@@ -27,7 +27,7 @@ def clean_id(id_str, id_options):
   except ValueError:
     input('''
           \n*** ID ERROR ***
-          \rThe ID should be a number.
+          \rThe ID should be a number from the list provided.
           \rPress enter to try again
           \r****************''')
     return
@@ -130,10 +130,22 @@ def app():
             \rProduct Price: ${searched_product.product_price / 100}
             \rProduct Quantity: {searched_product.product_quantity}
             \rDate Updated: {searched_product.date_updated}''')
-      time.sleep(2)
+      print('\nReturning to main menu ... ')
+      time.sleep(3)
     elif choice == 'a':
       # ADD PRODUCT
-      name = input('Product Name: ')
+      name_error = True
+      while name_error:
+        name = input('Product Name: ')
+        name_in_db = session.query(Product).filter(Product.product_name==name).one_or_none()
+        if name_in_db != None:
+          print(f'''
+                \n*** NAME ERROR ***
+                \rThere is already a product with the name of {name}
+                \rPress enter a new product.
+                \r******************''')
+        else:
+          name_error = False
       price_error = True
       while price_error:
         price = input('Product Price (Ex: 29.99): ')
@@ -151,9 +163,12 @@ def app():
       session.add(new_product)
       session.commit()
       print('Product added successfully!')
-      time.sleep(2)
+      print('\nPrinting inventory ... ')
+      time.sleep(3)
       for product in session.query(Product):
         print(product)
+      print('\nReturning to main menu ...')
+      time.sleep(3)
       
 
 if __name__ == '__main__':
