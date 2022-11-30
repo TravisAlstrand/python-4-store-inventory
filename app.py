@@ -111,6 +111,7 @@ def app():
   while app_running:
     choice = menu()
     if choice == 'v':
+      # VIEW PRODUCT
       id_options = []
       for product in session.query(Product):
         id_options.append(product.product_id)
@@ -130,11 +131,35 @@ def app():
             \rProduct Quantity: {searched_product.product_quantity}
             \rDate Updated: {searched_product.date_updated}''')
       time.sleep(2)
+    elif choice == 'a':
+      # ADD PRODUCT
+      name = input('Product Name: ')
+      price_error = True
+      while price_error:
+        price = input('Product Price (Ex: 29.99): ')
+        price = clean_price(price)
+        if type(price) == int:
+          price_error = False
+      quantity_error = True
+      while quantity_error:
+        quantity = input('Product Quantity: ')
+        quantity = clean_quantity(quantity)
+        if type(quantity) == int:
+          quantity_error = False
+      date = datetime.date.today()
+      new_product = Product(product_name=name, product_price=price, product_quantity=quantity, date_updated=date)
+      session.add(new_product)
+      session.commit()
+      print('Product added successfully!')
+      time.sleep(2)
+      for product in session.query(Product):
+        print(product)
+      
 
 if __name__ == '__main__':
   Base.metadata.create_all(engine)
   add_csv()
   app()
 
-  # for product in session.query(Product):
-  #   print(product)
+  for product in session.query(Product):
+    print(product)
