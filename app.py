@@ -134,18 +134,16 @@ def app():
       time.sleep(3)
     elif choice == 'a':
       # ADD PRODUCT
-      name_error = True
-      while name_error:
-        name = input('Product Name: ')
-        name_in_db = session.query(Product).filter(Product.product_name==name).one_or_none()
-        if name_in_db != None:
-          print(f'''
-                \n*** NAME ERROR ***
-                \rThere is already a product with the name of {name}
-                \rPress enter a new product.
-                \r******************''')
-        else:
-          name_error = False
+      editing = False
+      name = input('Product Name: ')
+      product_to_edit = session.query(Product).filter(Product.product_name==name).one_or_none()
+      # IF PRODUCT ALREADY EXISTS...
+      if product_to_edit != None:
+        print(f'''
+              \n*** NAME ERROR ***
+              \rThere is already a product with the name of {name}
+              \rYou are now updating this product...''')
+        editing = True
       price_error = True
       while price_error:
         price = input('Product Price (Ex: 29.99): ')
@@ -159,10 +157,19 @@ def app():
         if type(quantity) == int:
           quantity_error = False
       date = datetime.date.today()
-      new_product = Product(product_name=name, product_price=price, product_quantity=quantity, date_updated=date)
-      session.add(new_product)
-      session.commit()
-      print('Product added successfully!')
+      # CREATE PRODUCT
+      if editing == False:
+        new_product = Product(product_name=name, product_price=price, product_quantity=quantity, date_updated=date)
+        session.add(new_product)
+        session.commit()
+        print('Product added successfully!')
+      # EDIT PRODUCT
+      else:
+        product_to_edit.product_name = name
+        product_to_edit.product_price = price
+        product_to_edit.product_quantity = quantity
+        product_to_edit.date_updated = date
+        print('Product updated successfully!')
       print('\nPrinting inventory ... ')
       time.sleep(3)
       for product in session.query(Product):
