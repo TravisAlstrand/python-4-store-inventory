@@ -38,8 +38,7 @@ def clean_id(id_str, id_options):
     else:
       input(f'''
             \n*** ID ERROR ***
-            \rPlease only enter an ID from the options below to view.
-            \rID Options: {id_options}
+            \rPlease only enter an ID from the options provided.
             \rPress enter to try again
             \r****************''')
       return
@@ -104,6 +103,9 @@ def backup_to_new_csv():
         'product_quantity': product.product_quantity,
         'date_updated': product.date_updated
       })
+  print('\nBackup successful!')
+  print('\nReturning to main menu...')
+  time.sleep(3)
 
 
 def add_csv_to_db():
