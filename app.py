@@ -10,14 +10,15 @@ def menu():
           \r*** MAIN MENU ***
           \rView Single Product Details - (v)
           \rAdd a new product - (a)
-          \rBackup Entire Database - (b)''')
+          \rBackup Entire Database - (b)
+          \rQuit (q)''')
     choice = input('\nWhat would you like to do? ')
-    if choice in ['v', 'a', 'b']:
+    if choice in ['v', 'a', 'b', 'q']:
       return choice
     else:
       input('''
             \nPlease choose one of the options above.
-            \rEither v, a or b.
+            \rEither v, a, b or q.
             \rPress enter to try again.''')
 
 
@@ -91,9 +92,25 @@ def clean_date(date_str):
     return date_obj
 
 
-def add_csv():
+def backup_to_new_csv():
+  with open('backup.csv', 'w') as csvfile:
+    fieldnames = ['product_name', 'product_price', 'product_quantity', 'date_updated']
+    inventory_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    inventory_writer.writeheader()
+    for product in session.query(Product):
+      inventory_writer.writerow({
+        'product_name': product.product_name,
+        'product_price': product.product_price,
+        'product_quantity': product.product_quantity,
+        'date_updated': product.date_updated
+      })
+
+
+def add_csv_to_db():
   with open('inventory.csv') as csvfile:
     data = csv.reader(csvfile)
+    # SKIP HEADER LINE
+    next(data)
     for row in data:
       product_in_db = session.query(Product).filter(Product.product_name==row[0]).one_or_none()
       if product_in_db == None:
@@ -176,12 +193,14 @@ def app():
         print(product)
       print('\nReturning to main menu ...')
       time.sleep(3)
+    elif choice == 'b':
+      backup_to_new_csv()
+    elif choice == 'q':
+      print('Thanks for stopping by!')
+      quit()
       
 
 if __name__ == '__main__':
   Base.metadata.create_all(engine)
-  add_csv()
+  add_csv_to_db()
   app()
-
-  for product in session.query(Product):
-    print(product)
