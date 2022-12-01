@@ -196,8 +196,10 @@ def app():
       print('\nReturning to main menu ...')
       time.sleep(3)
     elif choice == 'b':
+      # BACKUP INVENTORY
       backup_to_new_csv()
     elif choice == 'q':
+      # QUIT
       print('Thanks for stopping by!')
       quit()
       
