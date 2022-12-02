@@ -91,17 +91,25 @@ def clean_date(date_str):
     return date_obj
 
 
+def create_product(name, price, quantity, date):
+  new_product = Product(product_name=name, product_price=price, product_quantity=quantity, date_updated=date)
+  session.add(new_product)
+  session.commit()
+
+
 def backup_to_new_csv():
   with open('backup.csv', 'w') as csvfile:
     fieldnames = ['product_name', 'product_price', 'product_quantity', 'date_updated']
     inventory_writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     inventory_writer.writeheader()
     for product in session.query(Product):
+      unclean_price = float(product.product_price / 100)
+      unclean_date = product.date_updated.strftime('%-m/%-d/%Y')
       inventory_writer.writerow({
         'product_name': product.product_name,
-        'product_price': product.product_price,
+        'product_price': '${0:.2f}'.format(unclean_price),
         'product_quantity': product.product_quantity,
-        'date_updated': product.date_updated
+        'date_updated': unclean_date
       })
   print('\nBackup successful!')
   print('\nReturning to main menu...')
@@ -153,16 +161,7 @@ def app():
       time.sleep(3)
     elif choice == 'a':
       # ADD PRODUCT
-      editing = False
       name = input('Product Name: ')
-      product_to_edit = session.query(Product).filter(Product.product_name==name).one_or_none()
-      # IF PRODUCT ALREADY EXISTS...
-      if product_to_edit != None:
-        print(f'''
-              \n*** NAME ERROR ***
-              \rThere is already a product with the name of {name}
-              \rYou are now updating this product...''')
-        editing = True
       price_error = True
       while price_error:
         price = input('Product Price (Ex: 29.99): ')
@@ -175,20 +174,26 @@ def app():
         quantity = clean_quantity(quantity)
         if type(quantity) == int:
           quantity_error = False
-      date = datetime.date.today()
+      date_error = True
+      while date_error:
+        date = input('Date Updated (Ex: 1/22/2018): ')
+        date = clean_date(date)
+        if type(date) == datetime.date:
+          date_error = False
+      # CHECK IF PRODUCT EXISTS IN DB
+      product_in_db = session.query(Product).filter(Product.product_name==name).one_or_none()
       # CREATE PRODUCT
-      if editing == False:
-        new_product = Product(product_name=name, product_price=price, product_quantity=quantity, date_updated=date)
-        session.add(new_product)
-        session.commit()
+      if product_in_db == None:
+        create_product(name, price, quantity, date)
         print('Product added successfully!')
-      # EDIT PRODUCT
+      # UPDATE TO NEWEST
       else:
-        product_to_edit.product_name = name
-        product_to_edit.product_price = price
-        product_to_edit.product_quantity = quantity
-        product_to_edit.date_updated = date
-        print('Product updated successfully!')
+        if date > product_in_db.date_updated:
+          session.delete(product_in_db)
+          create_product(name, price, quantity, date)
+          print('Product updated successfully!')
+        else:
+          print('Most recent product reserved.')
       print('\nPrinting inventory ... ')
       time.sleep(3)
       for product in session.query(Product):
