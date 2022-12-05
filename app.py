@@ -104,7 +104,13 @@ def backup_to_new_csv():
     inventory_writer.writeheader()
     for product in session.query(Product):
       unclean_price = float(product.product_price / 100)
-      unclean_date = product.date_updated.strftime('%-m/%-d/%Y')
+      unclean_date = product.date_updated.strftime('%m/%d/%Y')
+      date_m1 = unclean_date[3]
+      date_d1 = unclean_date[0]
+      if date_m1 == '0':
+        unclean_date = unclean_date[:3] + unclean_date[4:]
+      if date_d1 == '0':
+        unclean_date = unclean_date[1:]
       inventory_writer.writerow({
         'product_name': product.product_name,
         'product_price': '${0:.2f}'.format(unclean_price),
