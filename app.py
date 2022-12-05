@@ -12,7 +12,7 @@ def menu():
           \rAdd a new product - (a)
           \rBackup Entire Database - (b)
           \rQuit (q)''')
-    choice = input('\nWhat would you like to do? ')
+    choice = input('\nWhat would you like to do? ').lower()
     if choice in ['v', 'a', 'b', 'q']:
       return choice
     else:
@@ -96,6 +96,20 @@ def create_product(name, price, quantity, date):
   session.add(new_product)
   session.commit()
 
+def edit_product(og, name, price, quantity, date):
+  og.product_name = name
+  og.product_price = price
+  og.product_quantity = quantity
+  og.date_updated = date
+
+
+def build_product(row):
+    name = row[0]
+    price = clean_price(row[1])
+    quantity = clean_quantity(row[2])
+    date = clean_date(row[3])
+    create_product(name, price, quantity, date)
+
 
 def backup_to_new_csv():
   with open('backup.csv', 'w') as csvfile:
@@ -105,11 +119,9 @@ def backup_to_new_csv():
     for product in session.query(Product):
       unclean_price = float(product.product_price / 100)
       unclean_date = product.date_updated.strftime('%m/%d/%Y')
-      date_m1 = unclean_date[3]
-      date_d1 = unclean_date[0]
-      if date_m1 == '0':
+      if unclean_date[3] == '0':
         unclean_date = unclean_date[:3] + unclean_date[4:]
-      if date_d1 == '0':
+      if unclean_date[0] == '0':
         unclean_date = unclean_date[1:]
       inventory_writer.writerow({
         'product_name': product.product_name,
@@ -119,7 +131,7 @@ def backup_to_new_csv():
       })
   print('\nBackup successful!')
   print('\nReturning to main menu...')
-  time.sleep(3)
+  time.sleep(2.5)
 
 
 def add_csv_to_db():
@@ -130,13 +142,13 @@ def add_csv_to_db():
     for row in data:
       product_in_db = session.query(Product).filter(Product.product_name==row[0]).one_or_none()
       if product_in_db == None:
-        name = row[0]
-        price = clean_price(row[1])
-        quantity = clean_quantity(row[2])
-        date_updated = clean_date(row[3])
-        new_product = Product(product_name=name, product_price=price, product_quantity=quantity, date_updated=date_updated)
-        session.add(new_product)
-  session.commit()
+        build_product(row)
+      else:
+        if product_in_db.date_updated < clean_date(row[3]):
+          session.delete(product_in_db)
+          build_product(row)
+        else:
+          pass
 
 
 def app():
@@ -164,7 +176,7 @@ def app():
             \rProduct Quantity: {searched_product.product_quantity}
             \rDate Updated: {searched_product.date_updated}''')
       print('\nReturning to main menu ... ')
-      time.sleep(3)
+      time.sleep(2.5)
     elif choice == 'a':
       # ADD PRODUCT
       name = input('Product Name: ')
@@ -180,32 +192,26 @@ def app():
         quantity = clean_quantity(quantity)
         if type(quantity) == int:
           quantity_error = False
-      date_error = True
-      while date_error:
-        date = input('Date Updated (Ex: 1/22/2018): ')
-        date = clean_date(date)
-        if type(date) == datetime.date:
-          date_error = False
+      date = datetime.date.today()
       # CHECK IF PRODUCT EXISTS IN DB
       product_in_db = session.query(Product).filter(Product.product_name==name).one_or_none()
-      # CREATE PRODUCT
+      # IF NOT CREATE PRODUCT
       if product_in_db == None:
         create_product(name, price, quantity, date)
         print('Product added successfully!')
-      # UPDATE TO NEWEST
+      # IF EXISTS UPDATE TO NEWEST
       else:
-        if date > product_in_db.date_updated:
-          session.delete(product_in_db)
-          create_product(name, price, quantity, date)
+        if date >= product_in_db.date_updated:
+          edit_product(product_in_db, name, price, quantity, date)
           print('Product updated successfully!')
         else:
           print('Most recent product reserved.')
       print('\nPrinting inventory ... ')
-      time.sleep(3)
+      time.sleep(2.5)
       for product in session.query(Product):
         print(product)
       print('\nReturning to main menu ...')
-      time.sleep(3)
+      time.sleep(2.5)
     elif choice == 'b':
       # BACKUP INVENTORY
       backup_to_new_csv()
